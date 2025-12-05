@@ -23,9 +23,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err?.response?.status === 401) {
+    // Only redirect to login for 401 on auth-related endpoints
+    // Don't redirect for data fetching endpoints that might fail due to other reasons
+    const authEndpoints = ['/api/auth/check', '/api/auth/login', '/api/learner/profile', '/api/mentor/profile'];
+    const requestUrl = err?.config?.url || '';
+    const isAuthEndpoint = authEndpoints.some(endpoint => requestUrl.includes(endpoint));
+    
+    if (err?.response?.status === 401 && isAuthEndpoint) {
       try { localStorage.removeItem('token'); } catch {}
-      if (typeof window !== 'undefined') window.location.href = '/auth/login';
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+        window.location.href = '/auth/login';
+      }
     }
     return Promise.reject(err);
   }

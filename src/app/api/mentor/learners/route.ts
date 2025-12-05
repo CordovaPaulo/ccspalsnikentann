@@ -32,10 +32,38 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({
-      learners: response.data.learners || response.data,
-      total: response.data.total || response.data.length
-    });
+    // Extract data from nested structure: response.data.data or response.data.learners.data
+    let learnersData = [];
+    if (response.data.data) {
+      learnersData = response.data.data;
+    } else if (response.data.learners?.data) {
+      learnersData = response.data.learners.data;
+    } else if (response.data.learners) {
+      learnersData = response.data.learners;
+    } else {
+      learnersData = Array.isArray(response.data) ? response.data : [];
+    }
+
+    // Transform to match expected format
+    const transformedLearners = learnersData.map((learner: any) => ({
+      id: learner._id || learner.id,
+      name: learner.name || learner.userId?.username || 'Unknown',
+      email: learner.email || learner.userId?.email,
+      yearLevel: learner.yearLevel || '1st Year',
+      program: learner.program || 'Computer Science',
+      subjects: learner.subjects || [],
+      style: learner.style || [],
+      goals: learner.goals || '',
+      bio: learner.bio || '',
+      image: learner.image || 'https://placehold.co/100x100',
+      phoneNumber: learner.phoneNumber || '',
+      address: learner.address || '',
+      modality: learner.modality || 'Online',
+      availability: learner.availability || [],
+      status: learner.status || learner.accountStatus || 'Active'
+    }));
+
+    return NextResponse.json(transformedLearners);
 
   } catch (error: any) {
     console.error('Fetch learners error:', error);

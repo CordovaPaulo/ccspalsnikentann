@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
+// import axios from 'axios';
 
 const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
 const EXTERNAL_API_KEY = process.env.MINDMATE_EXTERNAL_API_KEY;

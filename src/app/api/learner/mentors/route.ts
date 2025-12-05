@@ -32,10 +32,41 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({
-      mentors: response.data.mentors || response.data,
-      total: response.data.total || response.data.length
-    });
+    // Extract data from nested structure: response.data.data or response.data.mentors.data
+    let mentorsData = [];
+    if (response.data.data) {
+      mentorsData = response.data.data;
+    } else if (response.data.mentors?.data) {
+      mentorsData = response.data.mentors.data;
+    } else if (response.data.mentors) {
+      mentorsData = response.data.mentors;
+    } else {
+      mentorsData = Array.isArray(response.data) ? response.data : [];
+    }
+
+    // Transform to match expected format
+    const transformedMentors = mentorsData.map((mentor: any) => ({
+      id: mentor._id || mentor.id,
+      name: mentor.name || mentor.userId?.username || 'Unknown',
+      email: mentor.email || mentor.userId?.email,
+      yearLevel: mentor.yearLevel || 'Professor',
+      program: mentor.program || 'Computer Science',
+      subjects: mentor.subjects || mentor.specialization || [],
+      availability: mentor.availability || [],
+      sessionDur: mentor.sessionDur || '1 hour',
+      modality: mentor.modality || 'Online',
+      bio: mentor.bio || '',
+      image: mentor.image || 'https://placehold.co/100x100',
+      proficiency: mentor.proficiency || 'Intermediate',
+      experience: mentor.exp || mentor.experience || '',
+      credentials: mentor.credentials || [],
+      aveRating: mentor.aveRating || 4.5,
+      status: mentor.accountStatus || 'Active',
+      specialization: mentor.specialization || [],
+      verified: mentor.verified || false
+    }));
+
+    return NextResponse.json(transformedMentors);
 
   } catch (error: any) {
     console.error('Fetch mentors error:', error);

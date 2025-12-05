@@ -56,8 +56,7 @@ const mockMentorProfile = {
 export const userService = {
   async fetchProfile(role: 'learner' | 'mentor') {
     try {
-      // Remove the /api prefix since your backend doesn't use it
-      const endpoint = role === 'learner' ? '/learner/profile' : '/mentor/profile';
+      const endpoint = role === 'learner' ? '/api/learner/profile' : '/api/mentor/profile';
       console.log('Fetching profile from:', endpoint);
       
       const response = await api.get(endpoint, {
@@ -75,7 +74,7 @@ export const userService = {
 
   async fetchSchedules(role: 'learner' | 'mentor') {
     try {
-      const endpoint = role === 'learner' ? '/learner/schedules' : '/mentor/schedules';
+      const endpoint = role === 'learner' ? '/api/learner/schedules' : '/api/mentor/schedules';
       const response = await api.get(endpoint);
       return response.data;
     } catch (error) {
@@ -90,7 +89,7 @@ export const userService = {
 
   async fetchMentors() {
     try {
-      const response = await api.get('/learner/mentors');
+      const response = await api.get('/api/learner/mentors');
       return response.data;
     } catch (error) {
       console.warn('API failed for mentors, using mock data');
@@ -100,7 +99,7 @@ export const userService = {
 
   async fetchLearners() {
     try {
-      const response = await api.get('/mentor/learners');
+      const response = await api.get('/api/mentor/learners');
       return response.data;
     } catch (error) {
       console.warn('API failed for learners, using mock data');
@@ -110,7 +109,7 @@ export const userService = {
 
   async fetchForumData() {
     try {
-      const response = await api.get('/forum/posts');
+      const response = await api.get('/api/forum/posts');
       return response.data;
     } catch (error) {
       console.warn('API failed for forum data, using mock data');
@@ -120,7 +119,7 @@ export const userService = {
 
   async fetchAnalytics(role: 'learner' | 'mentor') {
     try {
-      const endpoint = role === 'learner' ? '/learner/analytics' : '/mentor/session/analytics';
+      const endpoint = role === 'learner' ? '/api/learner/analytics' : '/api/mentor/session/analytics';
       const response = await api.get(endpoint);
       return response.data;
     } catch (error) {
@@ -131,7 +130,7 @@ export const userService = {
 
   async fetchFeedbacks() {
     try {
-      const response = await api.get('/mentor/feedbacks');
+      const response = await api.get('/api/mentor/feedbacks');
       return response.data;
     } catch (error) {
       console.warn('API failed for feedbacks, using mock data');
