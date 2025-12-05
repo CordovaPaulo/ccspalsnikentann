@@ -2,20 +2,45 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import MainComponent from '@/components/templates/MentorMainTemplate/page';
-import SessionComponent from '@/components/organisms/views/MentorSessionsView/page';
-import ReviewsComponent from '@/components/organisms/tables/MentorReviewsTable/page';
-import FilesComponent from '@/components/organisms/forms/FileUploadForm/page';
-import FileManagerComponent from '@/components/organisms/tables/FileManagerTable/page';
-import EditInformationComponent from '@/components/organisms/forms/MentorEditInformationForm/page';
-import LogoutComponent from '@/components/organisms/modals/LogoutModal/page';
-import GroupSessionInvite from '@/components/organisms/modals/GroupSessionInviteModal/page';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy components
+const MainComponent = dynamic(() => import('@/components/templates/MentorMainTemplate/page'), {
+  loading: () => <div className="loadingFallback">Loading...</div>,
+  ssr: false
+});
+const SessionComponent = dynamic(() => import('@/components/organisms/views/MentorSessionsView/page'), {
+  loading: () => <div className="loadingFallback">Loading sessions...</div>,
+  ssr: false
+});
+const ReviewsComponent = dynamic(() => import('@/components/organisms/tables/MentorReviewsTable/page'), {
+  loading: () => <div className="loadingFallback">Loading reviews...</div>,
+  ssr: false
+});
+const FilesComponent = dynamic(() => import('@/components/organisms/forms/FileUploadForm/page'), {
+  loading: () => <div className="loadingFallback">Loading file upload...</div>,
+  ssr: false
+});
+const FileManagerComponent = dynamic(() => import('@/components/organisms/tables/FileManagerTable/page'), {
+  loading: () => <div className="loadingFallback">Loading files...</div>,
+  ssr: false
+});
+const EditInformationComponent = dynamic(() => import('@/components/organisms/forms/MentorEditInformationForm/page'), {
+  loading: () => <div className="loadingFallback">Loading form...</div>,
+  ssr: false
+});
+const LogoutComponent = dynamic(() => import('@/components/organisms/modals/LogoutModal/page'), {
+  loading: () => null,
+  ssr: false
+});
 // import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useMobileView } from '@/hooks/useMobileView';
 import { useUserData } from '@/hooks/useUserData';
+import { useLearners } from '@/hooks/useLearners';
+import { useSchedules } from '@/hooks/useSchedules';
+import { useFeedbacks } from '@/hooks/useFeedbacks';
 import { authService } from '@/services/authService';
-import { userService } from '@/services/userService';
 import { normalizeSchedulesForSession } from '@/utils/transformers';
 import { useDatePopup, getCurrentDateTime } from '@/utils/dateUtils';
 import { MENTOR_TOPBAR_ITEMS } from '@/constants/navigation';
@@ -42,17 +67,29 @@ export default function MentorPage() {
   const { showDatePopup, setShowDatePopup, datePopupRef } = useDatePopup();
   const { userData, isLoading: userLoading, updateUserData } = useUserData('mentor');
   
-  const [isLoading, setIsLoading] = useState(false);
-  const [users, setUsers] = useState<any[]>([]);
-  const [todaySchedule, setTodaySchedule] = useState<any[]>([]);
-  const [upcomingSchedule, setUpcomingSchedule] = useState<any[]>([]);
-  const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  // Use custom hooks for data fetching
+  const { learners: users, isLoading: learnersLoading, error: learnersError, refetch: refetchLearners } = useLearners();
+  const { 
+    todaySchedule, 
+    upcomingSchedule, 
+    isLoading: schedulesLoading, 
+    error: schedulesError,
+    refetch: refetchSchedules 
+  } = useSchedules('mentor');
+  const { feedbacks, isLoading: feedbacksLoading, error: feedbacksError, refetch: refetchFeedbacks } = useFeedbacks();
   const [files, setFiles] = useState<any[]>([]);
   const [showAllCourses, setShowAllCourses] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showEditInformation, setShowEditInformation] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
+
+  const isLoading = learnersLoading || schedulesLoading || feedbacksLoading || userLoading;
+  const apiError = learnersError || schedulesError || feedbacksError;
+
+  // Refetch function to refresh all data
+  const refetchData = async () => {
+    await Promise.all([refetchLearners(), refetchSchedules(), refetchFeedbacks()]);
+  };
 
   const subjects = userData?.subjects || [];
   const displayedCourses = subjects.slice(0, 5);
@@ -63,49 +100,11 @@ export default function MentorPage() {
     const searchLower = searchQuery.toLowerCase();
     return (
       searchQuery === "" ||
-      user.name.toLowerCase().includes(searchLower) ||
-      user.yearLevel.toLowerCase().includes(searchLower) ||
-      user.program.toLowerCase().includes(searchLower)
+      user.name?.toLowerCase().includes(searchLower) ||
+      user.yearLevel?.toLowerCase().includes(searchLower) ||
+      user.program?.toLowerCase().includes(searchLower)
     );
   });
-
-  const fetchAdditionalData = async () => {
-    setIsLoading(true);
-    setApiError(null);
-    try {
-      const [learnersData, schedulesData, feedbacksData] = await Promise.allSettled([
-        userService.fetchLearners(),
-        userService.fetchSchedules('mentor'),
-        userService.fetchFeedbacks()
-      ]);
-
-      if (learnersData.status === 'fulfilled') {
-        setUsers(learnersData.value);
-      } else {
-        console.warn('Failed to fetch learners:', learnersData.reason);
-      }
-
-      if (schedulesData.status === 'fulfilled') {
-        const schedules = schedulesData.value;
-        setTodaySchedule(schedules.todaySchedule || []);
-        setUpcomingSchedule(schedules.upcomingSchedule || []);
-      } else {
-        console.warn('Failed to fetch schedules:', schedulesData.reason);
-      }
-
-      if (feedbacksData.status === 'fulfilled') {
-        setFeedbacks(feedbacksData.value);
-      } else {
-        console.warn('Failed to fetch feedbacks:', feedbacksData.reason);
-      }
-
-    } catch (error) {
-      console.error('Error fetching additional data:', error);
-      setApiError('Failed to load some data. Some features may not work properly.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const getFiles = async () => {
     try {
@@ -121,7 +120,6 @@ export default function MentorPage() {
 
   useEffect(() => {
     if (userData) {
-      fetchAdditionalData();
       getFiles();
     }
   }, [userData]);
@@ -164,12 +162,6 @@ export default function MentorPage() {
         <div className={styles.errorContent}>
           <span className={styles.errorIcon}>⚠️</span>
           <span className={styles.errorMessage}>{apiError}</span>
-          <button 
-            className={styles.errorClose}
-            onClick={() => setApiError(null)}
-          >
-            ×
-          </button>
         </div>
       </div>
     );
@@ -202,7 +194,7 @@ export default function MentorPage() {
           schedule={sessionSchedule} 
           upcomingSchedule={sessionUpcoming}
           userData={userData}
-          onScheduleCreated={fetchAdditionalData}
+          onScheduleCreated={refetchData}
         />;
       case 'reviews':
         return <ReviewsComponent 

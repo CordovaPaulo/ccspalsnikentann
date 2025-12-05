@@ -6,7 +6,8 @@ const EXTERNAL_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30
 export async function POST(request: NextRequest) {
   try {
     // Get the auth token from cookies
-    const token = request.cookies.get('MindMateToken')?.value;
+    const token = request.cookies.get('mindmate_token')?.value ||
+                  request.cookies.get('MindMateToken')?.value;
 
     // Forward the logout request to the external API
     const response = await axios.post(

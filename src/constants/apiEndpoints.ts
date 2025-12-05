@@ -10,7 +10,6 @@ export const API_ENDPOINTS = {
   MENTORS: '/learner/mentors',
   LEARNERS: '/mentor/learners',
   FEEDBACKS: '/mentor/feedbacks',
-  FORUM: '/forum/posts',
   ANALYTICS: {
     LEARNER: '/learner/analytics',
     MENTOR: '/mentor/session/analytics'

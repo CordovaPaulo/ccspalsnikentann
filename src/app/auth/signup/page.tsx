@@ -2,10 +2,15 @@
 
 import { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useRoleSelection } from '@/hooks/useRoleSelection';
 import { navigateToHome } from '@/utils/navigationHelpers';
 import styles from './Signup.module.css';
-import RoleCard from '@/components/molecules/RoleCard';
+
+const RoleCard = dynamic(() => import('@/components/molecules/RoleCard'), {
+  loading: () => <div className={styles.loadingCard}>Loading...</div>,
+  ssr: false
+});
 
 export default function SignupPage() {
   const router = useRouter();

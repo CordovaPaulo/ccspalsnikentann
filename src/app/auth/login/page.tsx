@@ -2,21 +2,22 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import Navbar from "@/components/organisms/Navbar";
+import dynamic from 'next/dynamic';
+
+const Navbar = dynamic(() => import("@/components/organisms/Navbar"), {
+  loading: () => <div style={{ height: '80px' }} />,
+  ssr: false
+});
 import { useLogin } from "@/hooks/useLogin";
 import { handlePasswordToggleKeyDown } from "@/helpers";
 import styles from "./login.module.css";
 
 export default function Login() {
   const { login, isLoading } = useLogin();
-
-  // State declarations
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [isButtonActive, setIsButtonActive] = useState(false);
-
-  // Refs
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const loginButtonRef = useRef<HTMLButtonElement>(null);

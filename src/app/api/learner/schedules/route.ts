@@ -9,7 +9,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'ccspals-default-secret-change-in-p
 
 // Helper to verify JWT and extract user info
 function verifyToken(request: NextRequest) {
-  const token = request.cookies.get('MindMateToken')?.value || 
+  const token = request.cookies.get('mindmate_token')?.value || 
+                request.cookies.get('MindMateToken')?.value ||
                 request.headers.get('Authorization')?.replace('Bearer ', '');
   
   if (!token) {

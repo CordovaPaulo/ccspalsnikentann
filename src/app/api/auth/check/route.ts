@@ -5,8 +5,13 @@ const EXTERNAL_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:30
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the auth token from cookies
-    const token = request.cookies.get('MindMateToken')?.value;
+    // Get the auth token from cookies or Authorization header
+    const cookieToken = request.cookies.get('mindmate_token')?.value ||
+                        request.cookies.get('MindMateToken')?.value;
+    const authHeader = request.headers.get('authorization');
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    
+    const token = cookieToken || headerToken;
 
     if (!token) {
       return NextResponse.json(

@@ -1,19 +1,38 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import MainComponent from '@/components/templates/LearnerMainTemplate/page';
-import SessionComponent from '@/components/organisms/views/LearnerSessionsView/page';
-import ReviewsComponent from '@/components/organisms/tables/LearnerReviewsTable/page';
-import EditInformation from '@/components/organisms/forms/LearnerEditInformationForm/page';
-import LogoutComponent from '@/components/organisms/modals/LogoutModal/page';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy components
+const MainComponent = dynamic(() => import('@/components/templates/LearnerMainTemplate/page'), {
+  loading: () => <div className="loadingFallback">Loading...</div>,
+  ssr: false
+});
+const SessionComponent = dynamic(() => import('@/components/organisms/views/LearnerSessionsView/page'), {
+  loading: () => <div className="loadingFallback">Loading sessions...</div>,
+  ssr: false
+});
+const ReviewsComponent = dynamic(() => import('@/components/organisms/tables/LearnerReviewsTable/page'), {
+  loading: () => <div className="loadingFallback">Loading reviews...</div>,
+  ssr: false
+});
+const EditInformation = dynamic(() => import('@/components/organisms/forms/LearnerEditInformationForm/page'), {
+  loading: () => <div className="loadingFallback">Loading form...</div>,
+  ssr: false
+});
+const LogoutComponent = dynamic(() => import('@/components/organisms/modals/LogoutModal/page'), {
+  loading: () => null,
+  ssr: false
+});
 // import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useMobileView } from '@/hooks/useMobileView';
 import { useUserData } from '@/hooks/useUserData';
+import { useMentors } from '@/hooks/useMentors';
+import { useSchedules } from '@/hooks/useSchedules';
 import { authService } from '@/services/authService';
-import { userService } from '@/services/userService';
-import { transformSchedulesForReview, transformMentorData, normalizeSchedulesForSession } from '@/utils/transformers';
+import { transformSchedulesForReview, normalizeSchedulesForSession } from '@/utils/transformers';
 import { useDatePopup, getCurrentDateTime } from '@/utils/dateUtils';
 import { LEARNER_TOPBAR_ITEMS } from '@/constants/navigation';
 import { LoadingSpinner } from '@/components/atoms/LoadingSpinner';
@@ -43,48 +62,29 @@ export default function LearnerPage() {
   const { showDatePopup, setShowDatePopup, datePopupRef } = useDatePopup();
   const { userData, isLoading: userLoading, updateUserData } = useUserData('learner');
   
-  const [isLoading, setIsLoading] = useState(false);
-  const [schedForReview, setSchedForReview] = useState([]);
-  const [todaySchedule, setTodaySchedule] = useState([]);
-  const [upcomingSchedule, setUpcomingSchedule] = useState([]);
+  // Use custom hooks for data fetching
+  const { transformedMentors, isLoading: mentorsLoading, error: mentorsError, refetch: refetchMentors } = useMentors();
+  const { 
+    todaySchedule, 
+    upcomingSchedule, 
+    schedForReview, 
+    isLoading: schedulesLoading, 
+    error: schedulesError,
+    refetch: refetchSchedules 
+  } = useSchedules('learner');
+  
   const [mentorFiles, setMentorFiles] = useState([]);
-  const [mentors, setMentors] = useState([]);
-  const [transformedMentors, setTransformedMentors] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [showAllCourses, setShowAllCourses] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchAdditionalData = async () => {
-    setIsLoading(true);
-    try {
-      const [schedulesData, mentorsData] = await Promise.allSettled([
-        userService.fetchSchedules('learner'),
-        userService.fetchMentors()
-      ]);
+  const isLoading = mentorsLoading || schedulesLoading || userLoading;
 
-      if (schedulesData.status === 'fulfilled') {
-        setTodaySchedule(schedulesData.value.todaySchedule || []);
-        setUpcomingSchedule(schedulesData.value.upcomingSchedule || []);
-        setSchedForReview(schedulesData.value.schedForReview || []);
-      }
-
-      if (mentorsData.status === 'fulfilled') {
-        setMentors(mentorsData.value);
-        setTransformedMentors(transformMentorData(mentorsData.value));
-      }
-    } catch (error) {
-      console.error('Error fetching additional data:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  // Refetch function to refresh all data
+  const refetchData = async () => {
+    await Promise.all([refetchMentors(), refetchSchedules()]);
   };
-
-  useEffect(() => {
-    if (userData) {
-      fetchAdditionalData();
-    }
-  }, [userData]);
 
   const filteredUsers = transformedMentors.filter((user) => {
     const searchLower = searchQuery.toLowerCase();
@@ -130,7 +130,7 @@ export default function LearnerPage() {
       schedule: sessionSchedule,
       schedForReview: schedForReview,
       mentFiles: sessionMentFiles,
-      onScheduleCreated: fetchAdditionalData 
+      onScheduleCreated: refetchData 
     };
 
     switch (activeComponent) {
