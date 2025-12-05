@@ -1,73 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import Feedback from '@/models/Feedback';
-import jwt from 'jsonwebtoken';
+import axios from 'axios';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ccspals-default-secret-change-in-production';
+const EXTERNAL_API_KEY = process.env.MINDMATE_EXTERNAL_API_KEY;
+const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
 
-// Helper to verify JWT and extract user info
-function verifyToken(request: NextRequest) {
-  const token = request.cookies.get('MindMateToken')?.value || 
-                request.headers.get('Authorization')?.replace('Bearer ', '');
-  
-  if (!token) {
-    throw new Error('Authentication required');
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
-    return decoded;
-  } catch (error) {
-    throw new Error('Invalid token');
-  }
-}
-
-// GET - Mentor reads all feedback they've received
+// GET - Mentor reads all feedback they've received from external API
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
-    
-    const { userId, role } = verifyToken(request);
-    
-    // Only mentors can view their feedback
-    if (role !== 'mentor') {
-      return NextResponse.json(
-        { error: 'Only mentors can view feedback' },
-        { status: 403 }
-      );
+    // Accept token from cookie or Authorization header
+    const cookieToken = request.cookies.get('mindmate_token')?.value || request.cookies.get('MindMateToken')?.value;
+    const authHeader = request.headers.get('authorization');
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const token = cookieToken || headerToken;
+
+    if (!EXTERNAL_API_KEY) {
+      return NextResponse.json({ error: 'External API configuration missing' }, { status: 500 });
     }
 
     const { searchParams } = new URL(request.url);
     const rating = searchParams.get('rating');
     const subject = searchParams.get('subject');
 
-    // Build query
-    const query: any = { mentorId: userId };
-    if (rating) {
-      query.rating = parseInt(rating);
-    }
-    if (subject) {
-      query.subject = subject;
-    }
-
-    const feedbacks = await Feedback.find(query).sort({ createdAt: -1 });
-
-    // Calculate average rating
-    const averageRating = feedbacks.length > 0
-      ? feedbacks.reduce((sum, fb) => sum + fb.rating, 0) / feedbacks.length
-      : 0;
-
-    return NextResponse.json({
-      feedbacks,
-      total: feedbacks.length,
-      averageRating: Math.round(averageRating * 10) / 10
+    const response = await axios.get(`${EXTERNAL_API_URL}/mentors/feedbacks`, {
+      headers: {
+        'X-API-KEY': `${EXTERNAL_API_KEY}`,
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      params: {
+        ...(rating && { rating }),
+        ...(subject && { subject }),
+      },
     });
+
+    return NextResponse.json(response.data);
 
   } catch (error: any) {
     console.error('Get mentor feedbacks error:', error);
     
-    if (error.message === 'Authentication required' || error.message === 'Invalid token') {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+    if (error.response?.status === 401) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     return NextResponse.json(

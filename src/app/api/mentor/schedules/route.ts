@@ -1,54 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import Schedule from '@/models/Schedule';
-import jwt from 'jsonwebtoken';
+import axios from 'axios';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ccspals-default-secret-change-in-production';
+const EXTERNAL_API_KEY = process.env.MINDMATE_EXTERNAL_API_KEY;
+const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
 
-// Helper to verify JWT and extract user info
-function verifyToken(request: NextRequest) {
-  const token = request.cookies.get('MindMateToken')?.value || 
-                request.headers.get('Authorization')?.replace('Bearer ', '');
-  
-  if (!token) {
-    throw new Error('Authentication required');
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
-    return decoded;
-  } catch (error) {
-    throw new Error('Invalid token');
-  }
-}
-
-// GET - Fetch schedules for mentor
+// GET - Fetch schedules for mentor from external API
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
-    
-    const { userId } = verifyToken(request);
-    
+    // Accept token from cookie or Authorization header
+    const cookieToken = request.cookies.get('mindmate_token')?.value || request.cookies.get('MindMateToken')?.value;
+    const authHeader = request.headers.get('authorization');
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const token = cookieToken || headerToken;
+
+    if (!EXTERNAL_API_KEY) {
+      return NextResponse.json({ error: 'External API configuration missing' }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
 
-    const query: any = { mentorId: userId };
-    if (status) {
-      query.status = status;
-    }
-
-    const schedules = await Schedule.find(query).sort({ date: -1, time: -1 });
-
-    return NextResponse.json({
-      schedules,
-      total: schedules.length
+    const response = await axios.get(`${EXTERNAL_API_URL}/mentors/schedules`, {
+      headers: {
+        'X-API-KEY': `${EXTERNAL_API_KEY}`,
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      params: status ? { status } : {},
     });
+
+    return NextResponse.json(response.data);
 
   } catch (error: any) {
     console.error('Get mentor schedules error:', error);
     
-    if (error.message === 'Authentication required' || error.message === 'Invalid token') {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+    if (error.response?.status === 401) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     return NextResponse.json(

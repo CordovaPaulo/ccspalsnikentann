@@ -107,6 +107,26 @@ export const userService = {
     }
   },
 
+  async fetchLearnerById(id: string) {
+    try {
+      const response = await api.get(`/api/learner/${encodeURIComponent(id)}`);
+      return response.data;
+    } catch (error) {
+      console.warn(`API failed for learner ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async fetchMentorById(id: string) {
+    try {
+      const response = await api.get(`/api/mentor/${encodeURIComponent(id)}`);
+      return response.data;
+    } catch (error) {
+      console.warn(`API failed for mentor ${id}:`, error);
+      throw error;
+    }
+  },
+
   async fetchForumData() {
     try {
       const response = await api.get('/api/forum/posts');
