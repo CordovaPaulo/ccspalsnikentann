@@ -1,0 +1,187 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import Navbar from "@/components/organisms/Navbar";
+import { useLogin } from "@/hooks/useLogin";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { handlePasswordToggleKeyDown } from "@/helpers";
+import styles from "./login.module.css";
+
+export default function Login() {
+  const { login, isLoading } = useLogin();
+
+  // State declarations
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [isButtonActive, setIsButtonActive] = useState(false);
+
+  // Refs
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const loginButtonRef = useRef<HTMLButtonElement>(null);
+  const forgotPasswordRef = useRef<HTMLAnchorElement>(null);
+
+  // Constants
+  const focusableElements = [
+    { ref: emailRef, type: 'input' },
+    { ref: passwordRef, type: 'input' },
+    { ref: loginButtonRef, type: 'button' },
+    { ref: forgotPasswordRef, type: 'link' }
+  ];
+
+  // Keyboard navigation
+  const { handleKeyDown, handleElementFocus } = useKeyboardNavigation({
+    elements: focusableElements,
+    onEnter: (index) => {
+      if (index === focusableElements.length - 1) {
+        forgotPasswordRef.current?.click();
+      } else {
+        handleLogin();
+      }
+    },
+    onSpace: (index) => {
+      if (index === focusableElements.length - 2) {
+        handleLogin();
+      } else if (index === focusableElements.length - 1) {
+        forgotPasswordRef.current?.click();
+      }
+    },
+    onEscape: () => {
+      emailRef.current?.focus();
+    }
+  });
+
+  // Effects
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
+
+  // Event handlers
+  const setButtonActive = (active: boolean) => {
+    if (!isLoading) {
+      setIsButtonActive(active);
+    }
+  };
+
+  const togglePasswordVisibility = () => {
+    setPasswordVisible(!passwordVisible);
+  };
+
+  const handleLogin = () => {
+    if (!isLoading) {
+      login(email, password);
+    }
+  };
+
+  // JSX Return
+  return (
+    <div className={styles.container}>
+      <Navbar />
+
+      <main className={styles.main}>
+        <div className={styles.mainImage}>
+          <Image
+            src="/img/logo_gccoed.png"
+            alt="CCSPals Logo"
+            width={400}
+            height={300}
+            priority
+          />
+        </div>
+
+        <div className={styles.mainContent}>
+          <h1>Login</h1>
+          <div role="form" aria-label="Login form" className={styles.form}>
+            <div className={styles.inputField}>
+              <label htmlFor="email">EMAIL</label>
+              <div className={styles.inputWithIcon}>
+                <input
+                  ref={emailRef}
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, 0)}
+                  onFocus={() => handleElementFocus(0)}
+                  placeholder="Enter your email"
+                  disabled={isLoading}
+                  required
+                  aria-describedby="email-description"
+                />
+                <i className={`fas fa-user ${styles.inputIcon}`}></i>
+              </div>
+              <span id="email-description" className={styles.srOnly}>
+                Enter your email address
+              </span>
+            </div>
+
+            <div className={styles.inputField}>
+              <label htmlFor="password">PASSWORD</label>
+              <div className={styles.inputWithIcon}>
+                <input
+                  ref={passwordRef}
+                  id="password"
+                  type={passwordVisible ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, 1)}
+                  onFocus={() => handleElementFocus(1)}
+                  placeholder="Enter your password"
+                  disabled={isLoading}
+                  required
+                  aria-describedby="password-description"
+                />
+                <i
+                  className={`${styles.inputIcon} ${styles.passwordToggle} fas ${
+                    passwordVisible ? "fa-eye" : "fa-eye-slash"
+                  }`}
+                  onClick={togglePasswordVisibility}
+                  onKeyDown={(e) => handlePasswordToggleKeyDown(e, togglePasswordVisibility)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={passwordVisible ? "Hide password" : "Show password"}
+                  aria-controls="password"
+                ></i>
+              </div>
+              <span id="password-description" className={styles.srOnly}>
+                Enter your password. Use Tab to navigate to next field.
+              </span>
+              <p className={styles.switchLink}>
+                <a
+                  href="/auth/forgot-password"
+                  ref={forgotPasswordRef}
+                  onKeyDown={(e) => handleKeyDown(e, 3)}
+                  onFocus={() => handleElementFocus(3)}
+                >
+                  Forgot Password?
+                </a>
+              </p>
+            </div>
+
+            <button
+              ref={loginButtonRef}
+              type="button"
+              className={`${styles.button} ${isLoading ? styles.loading : ""} ${
+                isButtonActive ? styles.active : ""
+              }`}
+              onMouseDown={() => setButtonActive(true)}
+              onMouseUp={() => setButtonActive(false)}
+              onMouseLeave={() => setButtonActive(false)}
+              onKeyDown={(e) => handleKeyDown(e, 2)}
+              onFocus={() => handleElementFocus(2)}
+              disabled={isLoading}
+              aria-busy={isLoading}
+              onClick={handleLogin}
+              aria-label="Login to your account"
+            >
+              {isLoading && <span className={styles.loadingSpinner}></span>}
+              {isLoading ? "Logging in..." : "Login"}
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
