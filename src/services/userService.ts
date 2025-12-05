@@ -106,24 +106,23 @@ export const userService = {
     }
   },
 
-  async fetchAnalytics(role: 'learner' | 'mentor') {
+  async fetchLearnerById(id: string) {
     try {
-      const endpoint = role === 'learner' ? '/api/learner/analytics' : '/api/mentor/session/analytics';
-      const response = await api.get(endpoint);
+      const response = await api.get(`/api/learner/${encodeURIComponent(id)}`);
       return response.data;
     } catch (error) {
-      console.warn(`API failed for ${role} analytics, using mock data`);
-      return { data: null };
+      console.warn(`API failed for learner ${id}:`, error);
+      throw error;
     }
   },
 
-  async fetchFeedbacks() {
+  async fetchMentorById(id: string) {
     try {
-      const response = await api.get('/api/mentor/feedbacks');
+      const response = await api.get(`/api/mentor/${encodeURIComponent(id)}`);
       return response.data;
     } catch (error) {
-      console.warn('API failed for feedbacks, using mock data');
-      return [];
+      console.warn(`API failed for mentor ${id}:`, error);
+      throw error;
     }
-  }
+  },
 };

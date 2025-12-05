@@ -23,10 +23,12 @@ export const useMentors = () => {
     setError(null);
     try {
       const data = await userService.fetchMentors();
-      setMentors(data);
+      // Ensure data is always an array
+      const mentorsArray = Array.isArray(data) ? data : (data?.mentors || []);
+      setMentors(mentorsArray);
       
       // Transform mentor data
-      const transformed = transformMentorData(data);
+      const transformed = transformMentorData(mentorsArray);
       setTransformedMentors(transformed);
     } catch (err: any) {
       setError(err.message);

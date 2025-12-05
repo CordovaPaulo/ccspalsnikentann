@@ -25,7 +25,9 @@ export const useLearners = () => {
     setError(null);
     try {
       const data = await userService.fetchLearners();
-      setLearners(data);
+      // Ensure data is always an array
+      const learnersArray = Array.isArray(data) ? data : (data?.learners || []);
+      setLearners(learnersArray);
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching learners:', err);

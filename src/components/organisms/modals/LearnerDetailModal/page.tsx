@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Offer, { OfferInfo } from '@/components/organisms/forms/SessionOfferForm/page';
+import Offer, { OfferInfo } from '../offer/page';
 import styles from './view.module.css';
 import api from '@/lib/axios';
 
@@ -36,7 +36,6 @@ export default function ViewUser({ userId, mentorData, onClose }: ViewUserProps)
   const [isLoading, setIsLoading] = useState(true);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showOffer, setShowOffer] = useState(false);
-  const [showGroupInvite, setShowGroupInvite] = useState(false);
   const [offerInfo, setOfferInfo] = useState<OfferInfo | null>(null);
 
   const [userInfo, setUserInfo] = useState<UserInfo>({
@@ -48,9 +47,17 @@ export default function ViewUser({ userId, mentorData, onClose }: ViewUserProps)
   const fetchUserInfo = async (id: string) => {
     try {
       setIsLoading(true);
-      const response = await api.get(`/api/mentor/learners/${id}`, { withCredentials: true });
-      const payload = response.data || {};
-      const learner = payload.learner || payload;         // supports both old and new shapes
+      const response = await api.get(`/api/mentor/${id}`, { withCredentials: true });
+      
+      // Normalize wrapped response: { success: true, data: {...} }
+      const resp = response.data || {};
+      let payload: any = resp;
+      if (resp.success && resp.data) {
+        payload = resp.data;
+      }
+
+      // The learner data is directly in payload
+      const learner = payload;
       const rankVal = payload.rank?.rank || learner.rank || ''; // new payload: { rank: { rank: '...' } }
 
       setUserInfo({
@@ -62,7 +69,7 @@ export default function ViewUser({ userId, mentorData, onClose }: ViewUserProps)
         email: learner.email || '',
         address: learner.address || '',
         bio: learner.bio || '',
-        subjects: learner.subjects || [],
+        subjects: learner.subjects || learner.specialization || [],
         learn_modality: learner.modality || '',
         learn_sty: learner.style || [],
         availability: learner.availability || [],
@@ -83,7 +90,7 @@ export default function ViewUser({ userId, mentorData, onClose }: ViewUserProps)
         learnStyle: learner.style || [],
         availability: learner.availability || [],
         profilePic: learner.image || '',
-        subjects: learner.subjects || []
+        subjects: learner.subjects || learner.specialization || []
       });
     } catch (error) {
       console.error('Error fetching learner details:', error);
@@ -276,13 +283,6 @@ export default function ViewUser({ userId, mentorData, onClose }: ViewUserProps)
                   Close
                 </button>
                 <button 
-                  className={styles.viewGroupInviteBtn} 
-                  onClick={() => setShowGroupInvite(true)}
-                  title="Invite to existing group session"
-                >
-                  <i className="fas fa-users"></i> Invite to Group
-                </button>
-                <button 
                   className={styles.viewSendOfferBtn} 
                   onClick={() => setShowConfirmationModal(true)}
                 >
@@ -315,17 +315,6 @@ export default function ViewUser({ userId, mentorData, onClose }: ViewUserProps)
           </div>
         )}
 
-        {/* Offer Modal - This will appear when showOffer is true */}
-        {showOffer && offerInfo && (
-          <div className={styles.viewPopupOverlay}>
-            <Offer
-              info={offerInfo}
-              mentorId={String(mentorData?.user?.id || mentorData?.user?._id || '')}
-              onClose={() => setShowOffer(false)}
-              onConfirm={handleOfferConfirm}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

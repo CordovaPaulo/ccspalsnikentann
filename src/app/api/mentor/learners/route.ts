@@ -68,18 +68,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Fetch learners error:', error);
     
-    // Return empty array instead of error if external API fails
-    if (error.response?.status === 404 || error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-      return NextResponse.json({
-        learners: [],
-        total: 0,
-        message: 'External learner service unavailable'
-      });
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to fetch learners' },
-      { status: 500 }
-    );
+    // Always return empty array for consistency
+    return NextResponse.json([]);
   }
 }

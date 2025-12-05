@@ -83,51 +83,52 @@ export default function ViewUser({ user, onClose, isOpen }: ViewUserProps) {
   const fetchUserInfo = async (id: string) => {
     try {
       setIsLoading(true);
-      const token = typeof document !== 'undefined'
-        ? document.cookie.split('; ').find(row => row.startsWith('MindMateToken='))?.split('=')[1]
-        : '';
+      
+      const res = await api.get(`/api/learner/${id}`, { withCredentials: true });
 
-      const res = await api.get(`/api/learner/mentors/${id}`, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
+      // Normalize wrapped response: { success: true, data: {...} }
+      const resp = res.data || {};
+      let payload: any = resp;
+      if (resp.success && resp.data) {
+        payload = resp.data;
+      }
 
-      const mentor = res.data;
+      // The mentor data is directly in payload
+      const mentor = payload;
 
     setUserInfo({
-      name: mentor.mentor.name || '',
-      year: mentor.mentor.yearLevel || '',
-      course: mentor.mentor.program || '',
-      gender: mentor.mentor.sex || '',
-      phoneNum: mentor.mentor.phoneNumber || '',
-      email: mentor.mentor.email || '',
-      address: mentor.mentor.address || '',
-      bio: mentor.mentor.bio || '',
-      subjects: mentor.mentor.subjects || [],
-      learn_modality: mentor.mentor.modality || '',
-      learn_sty: mentor.mentor.style || [],
-      availability: mentor.mentor.availability || [],
-      prefSessDur: mentor.mentor.sessionDur || '',
-      goals: mentor.mentor.goals || '',
-      image: mentor.mentor.image || '',
-      id: mentor.mentor._id || ''
+      name: mentor.name || '',
+      year: mentor.yearLevel || '',
+      course: mentor.program || '',
+      gender: mentor.sex || '',
+      phoneNum: mentor.phoneNumber || '',
+      email: mentor.email || '',
+      address: mentor.address || '',
+      bio: mentor.bio || '',
+      subjects: mentor.subjects || mentor.specialization || [],
+      learn_modality: mentor.modality || '',
+      learn_sty: mentor.style || [],
+      availability: mentor.availability || [],
+      prefSessDur: mentor.sessionDur || '',
+      goals: mentor.goals || '',
+      image: mentor.image || '',
+      id: mentor._id || mentor.id || ''
     });
 
-      setImageUrl(mentor.mentor.image || '');
+      setImageUrl(mentor.image || '');
 
       // Prepare data for schedule component - use more robust object structure
       const scheduleData = {
-        mentorId: mentor.mentor._id || id,
-        mentorName: mentor.mentor.name || '',
-        mentorYear: mentor.mentor.yearLevel || '',
-        mentorCourse: mentor.mentor.program || '',
-        mentorSessionDur: mentor.mentor.sessionDur || '',
-        mentorModality: mentor.mentor.modality || '',
-        mentorTeachStyle: mentor.mentor.style || [],
-        mentorAvailability: mentor.mentor.availability || [],
-        mentorProfilePic: mentor.mentor.image || '',
-        mentorSubjects: mentor.mentor.subjects || [],
+        mentorId: mentor._id || mentor.id || id,
+        mentorName: mentor.name || '',
+        mentorYear: mentor.yearLevel || '',
+        mentorCourse: mentor.program || '',
+        mentorSessionDur: mentor.sessionDur || '',
+        mentorModality: mentor.modality || '',
+        mentorTeachStyle: mentor.style || [],
+        mentorAvailability: mentor.availability || [],
+        mentorProfilePic: mentor.image || '',
+        mentorSubjects: mentor.subjects || mentor.specialization || [],
       };
       
       setUserDeetsForSched(scheduleData);

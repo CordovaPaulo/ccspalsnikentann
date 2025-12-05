@@ -71,19 +71,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Fetch mentors error:', error);
     
-    // Return empty array instead of error if external API fails
-    // This allows the app to continue functioning
-    if (error.response?.status === 404 || error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-      return NextResponse.json({
-        mentors: [],
-        total: 0,
-        message: 'External mentor service unavailable'
-      });
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to fetch mentors' },
-      { status: 500 }
-    );
+    // Always return empty array for consistency
+    return NextResponse.json([]);
   }
 }
