@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { authService } from '@/services/authService';
 import { setAuthToken } from '@/lib/axios';
 import { handleLoginError, redirectByRole } from '@/utils/authHelpers';
@@ -22,13 +21,9 @@ export function useLogin() {
     setIsLoading(true);
     try {
       const response = await authService.login(email.trim(), password);
-      
-      console.log('Login response:', response);
 
       // Handle nested response structure
       const { success, data, message } = response || {};
-      
-      console.log('Parsed:', { success, hasData: !!data, hasToken: !!data?.token });
       
       if (!success || !data?.token) {
         toast.error(message || "Login failed. Please try again.");

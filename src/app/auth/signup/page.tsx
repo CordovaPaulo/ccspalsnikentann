@@ -2,12 +2,10 @@
 
 import { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useRoleSelection } from '@/hooks/useRoleSelection';
-import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
-import { useModalNavigation } from '@/hooks/useModalNavigation';
 import { navigateToHome } from '@/utils/navigationHelpers';
 import styles from './Signup.module.css';
+import RoleCard from '@/components/molecules/RoleCard';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -23,57 +21,6 @@ export default function SignupPage() {
   const backButtonRef = useRef<HTMLButtonElement>(null);
   const learnerCardRef = useRef<HTMLDivElement>(null);
   const mentorCardRef = useRef<HTMLDivElement>(null);
-  const cancelButtonRef = useRef<HTMLButtonElement>(null);
-  const confirmButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Focusable elements for main page
-  const focusableElements = [
-    { ref: backButtonRef, type: 'button' },
-    { ref: learnerCardRef, type: 'card' },
-    { ref: mentorCardRef, type: 'card' }
-  ];
-
-  // Focusable elements for modal
-  const modalFocusableElements = [
-    { ref: cancelButtonRef, type: 'button' },
-    { ref: confirmButtonRef, type: 'button' }
-  ];
-
-  // Keyboard navigation for main page
-  const { handleKeyDown: handleMainKeyDown, handleElementFocus } = useKeyboardNavigation({
-    elements: focusableElements,
-    onEnter: (index) => {
-      if (index === 0) {
-        navigateToHome(router, 'get-started');
-      } else if (index === 1) {
-        initiateSignUp('learner');
-      } else if (index === 2) {
-        initiateSignUp('mentor');
-      }
-    },
-    onSpace: (index) => {
-      if (index === 0) {
-        navigateToHome(router, 'get-started');
-      } else if (index === 1) {
-        initiateSignUp('learner');
-      } else if (index === 2) {
-        initiateSignUp('mentor');
-      }
-    },
-    onEscape: () => {
-      backButtonRef.current?.focus();
-    },
-    enabled: !showConfirmationModal,
-  });
-
-  // Modal keyboard navigation
-  useModalNavigation({
-    modalElements: modalFocusableElements,
-    isOpen: showConfirmationModal,
-    onConfirm: confirmSelection,
-    onCancel: cancelSelection,
-    returnFocusTo: selectedRole === 'learner' ? learnerCardRef : mentorCardRef,
-  });
 
   // Auto-focus back button on component mount
   useEffect(() => {
@@ -87,8 +34,6 @@ export default function SignupPage() {
         ref={backButtonRef}
         onClick={() => navigateToHome(router, 'get-started')} 
         className={styles.backBtn}
-        onFocus={() => handleElementFocus(0)}
-        onKeyDown={(e) => handleMainKeyDown(e, 0)}
         tabIndex={0}
       >
         <svg
@@ -109,27 +54,18 @@ export default function SignupPage() {
       {showConfirmationModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.confirmationModal}>
-            <h3>Confirm Your Role</h3>
+            <h3>Confirm Your Selection</h3>
             <p>
-              You've selected to proceed as
-              <strong> {selectedRole.toUpperCase()}</strong>. Is this correct?
+              You've selected to proceed as a <strong>{selectedRole.toUpperCase()}</strong>.
+              <br />
+              Continue with this role?
             </p>
             <div className={styles.modalActions}>
-              <button 
-                ref={cancelButtonRef}
-                onClick={cancelSelection} 
-                className={styles.cancelBtn}
-                tabIndex={0}
-              >
+              <button className={styles.cancelBtn} onClick={cancelSelection}>
                 Cancel
               </button>
-              <button 
-                ref={confirmButtonRef}
-                onClick={confirmSelection} 
-                className={styles.confirmBtn}
-                tabIndex={0}
-              >
-                Confirm
+              <button className={styles.confirmBtn} onClick={confirmSelection}>
+                Continue
               </button>
             </div>
           </div>
@@ -142,95 +78,20 @@ export default function SignupPage() {
       </div>
 
       <section className={styles.joinSection} id="get-started">
-        {/* Learner Card */}
-        <div 
-          ref={learnerCardRef}
-          className={`${styles.joinCard} ${styles.learnerCard}`}
-          onFocus={() => handleElementFocus(1)}
-          tabIndex={0}
-        >
-          <div className={styles.cardContent}>
-            <div className={styles.roleTitle}>
-              <span>PROCEED AS</span>
-              <h3>LEARNER</h3>
-              <hr className={styles.divider} />
-            </div>
-
-            <div className={styles.cardIcon}>
-              <Image 
-                src="/learners.png" 
-                alt="Learner Icon" 
-                width={230}
-                height={200}
-              />
-            </div>
-
-            <button
-              type="button"
-              className={styles.joinBtn}
-              onClick={() => initiateSignUp('learner')}
-              aria-label="Sign up as Learner"
-            >
-              Get Started
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Mentor Card */}
-        <div 
-          ref={mentorCardRef}
-          className={`${styles.joinCard} ${styles.mentorCard}`}
-          onFocus={() => handleElementFocus(2)}
-          tabIndex={0}
-        >
-          <div className={styles.cardContent}>
-            <div className={styles.roleTitle}>
-              <span>PROCEED AS</span>
-              <h3>MENTOR</h3>
-              <hr className={styles.divider} />
-            </div>
-
-            <div className={styles.cardIcon}>
-              <Image 
-                src="/mentors.png" 
-                alt="Mentor Icon" 
-                width={230}
-                height={200}
-              />
-            </div>
-
-            <button
-              type="button"
-              className={styles.joinBtn}
-              onClick={() => initiateSignUp('mentor')}
-              aria-label="Sign up as Mentor"
-            >
-              Get Started
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
+        <RoleCard
+          role="learner"
+          onFocus={() => {}}
+          onClick={() => initiateSignUp('learner')}
+          cardRef={learnerCardRef}
+          styles={styles}
+        />
+        <RoleCard
+          role="mentor"
+          onFocus={() => {}}
+          onClick={() => initiateSignUp('mentor')}
+          cardRef={mentorCardRef}
+          styles={styles}
+        />
       </section>
     </div>
   );

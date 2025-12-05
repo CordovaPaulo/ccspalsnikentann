@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import MainComponent from '../components/learnerpage/main/page';
-import SessionComponent from '../components/learnerpage/session/page';
-import ReviewsComponent from '../components/learnerpage/reviews/page';
-import EditInformation from '../components/learnerpage/information/page';
-import LogoutComponent from '../components/learnerpage/logout/page';
+import MainComponent from '@/components/templates/LearnerMainTemplate/page';
+import SessionComponent from '@/components/organisms/views/LearnerSessionsView/page';
+import ReviewsComponent from '@/components/organisms/tables/LearnerReviewsTable/page';
+import EditInformation from '@/components/organisms/forms/LearnerEditInformationForm/page';
+import LogoutComponent from '@/components/organisms/modals/LogoutModal/page';
 // import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useMobileView } from '@/hooks/useMobileView';
@@ -226,7 +226,6 @@ export default function LearnerPage() {
             userData={userData}
             onCancel={() => setIsEdit(false)}
             onSave={(updatedData) => {
-              console.log('Data saved:', updatedData);
               updateUserData(updatedData);
               setIsEdit(false);
             }}

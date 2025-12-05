@@ -9,20 +9,6 @@ export function navigateToHome(router: AppRouterInstance, anchor?: string) {
 }
 
 /**
- * Navigate to signup page
- */
-export function navigateToSignup(router: AppRouterInstance) {
-  router.push('/auth/signup');
-}
-
-/**
- * Navigate to login page
- */
-export function navigateToLogin(router: AppRouterInstance) {
-  router.push('/auth/login');
-}
-
-/**
  * Navigate to learner info page
  */
 export function navigateToLearnerInfo(router: AppRouterInstance) {

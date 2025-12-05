@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import MainComponent from '../components/mentorpage/main/page';
-import SessionComponent from '../components/mentorpage/session/page';
-import ReviewsComponent from '../components/mentorpage/reviews/page';
-import FilesComponent from '../components/mentorpage/files/page';
-import FileManagerComponent from '../components/mentorpage/filemanager/page';
-import EditInformationComponent from '../components/mentorpage/information/page';
-import LogoutComponent from '../components/mentorpage/logout/page';
-import GroupSessionInvite from '../components/mentorpage/GroupSessionInvite/page';
+import MainComponent from '@/components/templates/MentorMainTemplate/page';
+import SessionComponent from '@/components/organisms/views/MentorSessionsView/page';
+import ReviewsComponent from '@/components/organisms/tables/MentorReviewsTable/page';
+import FilesComponent from '@/components/organisms/forms/FileUploadForm/page';
+import FileManagerComponent from '@/components/organisms/tables/FileManagerTable/page';
+import EditInformationComponent from '@/components/organisms/forms/MentorEditInformationForm/page';
+import LogoutComponent from '@/components/organisms/modals/LogoutModal/page';
+import GroupSessionInvite from '@/components/organisms/modals/GroupSessionInviteModal/page';
 // import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useMobileView } from '@/hooks/useMobileView';
@@ -52,8 +52,6 @@ export default function MentorPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showEditInformation, setShowEditInformation] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showGroupInviteModal, setShowGroupInviteModal] = useState(false);
-  const [selectedGroupSessionId, setSelectedGroupSessionId] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const subjects = userData?.subjects || [];
@@ -111,7 +109,6 @@ export default function MentorPage() {
 
   const getFiles = async () => {
     try {
-      console.log("Fetching files...");
       const mockFiles = [
         { id: 1, name: "Mathematics_Notes.pdf", size: "2.4 MB", date: "2024-01-10" },
         { id: 2, name: "Programming_Exercises.zip", size: "5.1 MB", date: "2024-01-08" },
@@ -204,13 +201,7 @@ export default function MentorPage() {
         return <SessionComponent 
           schedule={sessionSchedule} 
           upcomingSchedule={sessionUpcoming}
-          userData={{
-            ...userData,
-            onOpenGroupInvite: (sessionId: string) => {
-              setSelectedGroupSessionId(sessionId);
-              setShowGroupInviteModal(true);
-            }
-          }}
+          userData={userData}
           onScheduleCreated={fetchAdditionalData}
         />;
       case 'reviews':
@@ -267,21 +258,6 @@ export default function MentorPage() {
         <LogoutComponent
           onConfirm={handleLogout}
           onCancel={cancelLogout}
-        />
-      )}
-
-      {showGroupInviteModal && selectedGroupSessionId && (
-        <GroupSessionInvite
-          sessionId={selectedGroupSessionId}
-          onClose={() => {
-            setShowGroupInviteModal(false);
-            setSelectedGroupSessionId(null);
-          }}
-          onInviteSent={() => {
-            setShowGroupInviteModal(false);
-            setSelectedGroupSessionId(null);
-            toast.success('Group session invite sent successfully!');
-          }}
         />
       )}
 

@@ -19,9 +19,6 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await response.json();
-    
-    console.log('External API response:', JSON.stringify(data, null, 2));
-    console.log('Success check:', data.success, 'Has token:', !!data.data?.token);
 
     if (data.success && data.data?.token) {
       // Set httpOnly cookie for security
@@ -32,11 +29,9 @@ export async function POST(request: NextRequest) {
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7, // 1 week
       });
-      console.log('Cookie set, returning success response');
       return res;
     }
 
-    console.log('Returning response with status:', response.status);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Login proxy error:', error);

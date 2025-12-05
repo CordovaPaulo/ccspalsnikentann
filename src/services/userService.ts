@@ -58,13 +58,11 @@ export const userService = {
     try {
       // Remove the /api prefix since your backend doesn't use it
       const endpoint = role === 'learner' ? '/learner/profile' : '/mentor/profile';
-      console.log('Fetching profile from:', endpoint);
       
       const response = await api.get(endpoint, {
         timeout: 10000,
       });
       
-      console.log('Profile API response:', response.data);
       return response.data;
     } catch (error: any) {
       console.warn(`API failed for ${role} profile, using mock data:`, error.message);

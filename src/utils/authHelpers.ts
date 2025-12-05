@@ -64,32 +64,3 @@ export function redirectByRole(role: string, router: AppRouterInstance) {
       router.replace("/auth/signup");
   }
 }
-
-/**
- * Handle API errors for signup forms
- */
-export function handleSignupError(error: any): string {
-  if (error.response?.data) {
-    const errorData = error.response.data;
-    let errorMessage = errorData.message || 'There was an error submitting your information.';
-    
-    // Show validation errors with valid options if available
-    if (errorData.validOptions) {
-      errorMessage += `\n\nValid options: ${errorData.validOptions.join(', ')}`;
-    }
-    
-    // Show missing fields if available
-    if (errorData.missingFields) {
-      const missing = Object.entries(errorData.missingFields)
-        .filter(([_, isMissing]) => isMissing)
-        .map(([field]) => field);
-      if (missing.length > 0) {
-        errorMessage = `Missing required information in your student profile: ${missing.join(', ')}. Please contact support.`;
-      }
-    }
-    
-    return errorMessage;
-  }
-  
-  return 'There was an error submitting your information. Please try again.';
-}

@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Navbar from "@/components/organisms/Navbar";
 import { useLogin } from "@/hooks/useLogin";
-import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { handlePasswordToggleKeyDown } from "@/helpers";
 import styles from "./login.module.css";
 
@@ -22,36 +21,6 @@ export default function Login() {
   const passwordRef = useRef<HTMLInputElement>(null);
   const loginButtonRef = useRef<HTMLButtonElement>(null);
   const forgotPasswordRef = useRef<HTMLAnchorElement>(null);
-
-  // Constants
-  const focusableElements = [
-    { ref: emailRef, type: 'input' },
-    { ref: passwordRef, type: 'input' },
-    { ref: loginButtonRef, type: 'button' },
-    { ref: forgotPasswordRef, type: 'link' }
-  ];
-
-  // Keyboard navigation
-  const { handleKeyDown, handleElementFocus } = useKeyboardNavigation({
-    elements: focusableElements,
-    onEnter: (index) => {
-      if (index === focusableElements.length - 1) {
-        forgotPasswordRef.current?.click();
-      } else {
-        handleLogin();
-      }
-    },
-    onSpace: (index) => {
-      if (index === focusableElements.length - 2) {
-        handleLogin();
-      } else if (index === focusableElements.length - 1) {
-        forgotPasswordRef.current?.click();
-      }
-    },
-    onEscape: () => {
-      emailRef.current?.focus();
-    }
-  });
 
   // Effects
   useEffect(() => {
@@ -103,8 +72,6 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, 0)}
-                  onFocus={() => handleElementFocus(0)}
                   placeholder="Enter your email"
                   disabled={isLoading}
                   required
@@ -126,8 +93,6 @@ export default function Login() {
                   type={passwordVisible ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, 1)}
-                  onFocus={() => handleElementFocus(1)}
                   placeholder="Enter your password"
                   disabled={isLoading}
                   required
@@ -152,8 +117,6 @@ export default function Login() {
                 <a
                   href="/auth/forgot-password"
                   ref={forgotPasswordRef}
-                  onKeyDown={(e) => handleKeyDown(e, 3)}
-                  onFocus={() => handleElementFocus(3)}
                 >
                   Forgot Password?
                 </a>
@@ -169,8 +132,6 @@ export default function Login() {
               onMouseDown={() => setButtonActive(true)}
               onMouseUp={() => setButtonActive(false)}
               onMouseLeave={() => setButtonActive(false)}
-              onKeyDown={(e) => handleKeyDown(e, 2)}
-              onFocus={() => handleElementFocus(2)}
               disabled={isLoading}
               aria-busy={isLoading}
               onClick={handleLogin}
