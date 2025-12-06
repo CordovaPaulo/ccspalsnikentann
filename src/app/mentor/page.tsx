@@ -38,8 +38,7 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { useMobileView } from '@/hooks/useMobileView';
 import { useUserData } from '@/hooks/useUserData';
 import { useLearners } from '@/hooks/useLearners';
-import { useSchedules } from '@/hooks/useSchedules';
-import { useFeedbacks } from '@/hooks/useFeedbacks';
+import { useScheduleManager } from '@/hooks/useScheduleManager';
 import { authService } from '@/services/authService';
 import { normalizeSchedulesForSession } from '@/utils/transformers';
 import { useDatePopup, getCurrentDateTime } from '@/utils/dateUtils';
@@ -69,26 +68,29 @@ export default function MentorPage() {
   
   // Use custom hooks for data fetching
   const { learners: users, isLoading: learnersLoading, error: learnersError, refetch: refetchLearners } = useLearners();
-  const { 
-    todaySchedule, 
-    upcomingSchedule, 
-    isLoading: schedulesLoading, 
+  
+  // Use schedule manager for mentor
+  const userName = userData?.name || userData?.username || '';
+  const {
+    todaySchedules,
+    upcomingSchedules,
+    loading: schedulesLoading,
     error: schedulesError,
-    refetch: refetchSchedules 
-  } = useSchedules('mentor');
-  const { feedbacks, isLoading: feedbacksLoading, error: feedbacksError, refetch: refetchFeedbacks } = useFeedbacks();
+    fetchSchedules,
+    createSchedule
+  } = useScheduleManager(userName, 'mentor');
   const [files, setFiles] = useState<any[]>([]);
   const [showAllCourses, setShowAllCourses] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showEditInformation, setShowEditInformation] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const isLoading = learnersLoading || schedulesLoading || feedbacksLoading || userLoading;
-  const apiError = learnersError || schedulesError || feedbacksError;
+  const isLoading = learnersLoading || schedulesLoading || userLoading;
+  const apiError = learnersError || schedulesError;
 
   // Refetch function to refresh all data
   const refetchData = async () => {
-    await Promise.all([refetchLearners(), refetchSchedules(), refetchFeedbacks()]);
+    await Promise.all([refetchLearners(), fetchSchedules()]);
   };
 
   const subjects = userData?.subjects || [];
@@ -168,8 +170,8 @@ export default function MentorPage() {
   };
 
   const renderComponent = () => {
-    const sessionSchedule = normalizeSchedulesForSession(todaySchedule);
-    const sessionUpcoming = normalizeSchedulesForSession(upcomingSchedule);
+    const sessionSchedule = normalizeSchedulesForSession(todaySchedules);
+    const sessionUpcoming = normalizeSchedulesForSession(upcomingSchedules);
 
     switch (activeComponent) {
       case 'main':
@@ -195,10 +197,11 @@ export default function MentorPage() {
           upcomingSchedule={sessionUpcoming}
           userData={userData}
           onScheduleCreated={refetchData}
+          createSchedule={createSchedule}
         />;
       case 'reviews':
         return <ReviewsComponent 
-          feedbacks={feedbacks}
+          feedbacks={[]}
           userData={userData}
         />;
       case 'files':

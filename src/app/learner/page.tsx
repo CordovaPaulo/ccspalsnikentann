@@ -30,9 +30,9 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { useMobileView } from '@/hooks/useMobileView';
 import { useUserData } from '@/hooks/useUserData';
 import { useMentors } from '@/hooks/useMentors';
-import { useSchedules } from '@/hooks/useSchedules';
+import { useScheduleManager } from '@/hooks/useScheduleManager';
 import { authService } from '@/services/authService';
-import { transformSchedulesForReview, normalizeSchedulesForSession } from '@/utils/transformers';
+import { normalizeSchedulesForSession } from '@/utils/transformers';
 import { useDatePopup, getCurrentDateTime } from '@/utils/dateUtils';
 import { LEARNER_TOPBAR_ITEMS } from '@/constants/navigation';
 import { LoadingSpinner } from '@/components/atoms/LoadingSpinner';
@@ -64,14 +64,17 @@ export default function LearnerPage() {
   
   // Use custom hooks for data fetching
   const { transformedMentors, isLoading: mentorsLoading, error: mentorsError, refetch: refetchMentors } = useMentors();
-  const { 
-    todaySchedule, 
-    upcomingSchedule, 
-    schedForReview, 
-    isLoading: schedulesLoading, 
+  
+  // Use schedule manager for learner
+  const userName = userData?.name || userData?.username || '';
+  const {
+    todaySchedules,
+    upcomingSchedules,
+    loading: schedulesLoading,
     error: schedulesError,
-    refetch: refetchSchedules 
-  } = useSchedules('learner');
+    fetchSchedules,
+    createSchedule
+  } = useScheduleManager(userName, 'learner');
   
   const [mentorFiles, setMentorFiles] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
@@ -83,7 +86,7 @@ export default function LearnerPage() {
 
   // Refetch function to refresh all data
   const refetchData = async () => {
-    await Promise.all([refetchMentors(), refetchSchedules()]);
+    await Promise.all([refetchMentors(), fetchSchedules()]);
   };
 
   const filteredUsers = transformedMentors.filter((user) => {
@@ -111,9 +114,8 @@ export default function LearnerPage() {
   };
 
   const renderComponent = () => {
-    const transformedSchedForReview = transformSchedulesForReview(schedForReview);
-    const sessionSchedule = normalizeSchedulesForSession(todaySchedule);
-    const sessionUpcoming = normalizeSchedulesForSession(upcomingSchedule);
+    const sessionSchedule = normalizeSchedulesForSession(todaySchedules);
+    const sessionUpcoming = normalizeSchedulesForSession(upcomingSchedules);
     const sessionMentFiles = {
       files: (mentorFiles || []).map(f => ({
         id: Number(f.id) || 0,
@@ -128,9 +130,9 @@ export default function LearnerPage() {
       userData,
       upcomingSchedule: sessionUpcoming,
       schedule: sessionSchedule,
-      schedForReview: schedForReview,
       mentFiles: sessionMentFiles,
-      onScheduleCreated: refetchData 
+      onScheduleCreated: refetchData,
+      createSchedule
     };
 
     switch (activeComponent) {
@@ -142,7 +144,6 @@ export default function LearnerPage() {
             schedule={sessionSchedule}
             upcomingSchedule={sessionUpcoming}
             mentFiles={sessionMentFiles}
-            schedForReview={transformedSchedForReview}
             userInformation={filteredUsers}
             userData={userData}
           />
@@ -150,9 +151,8 @@ export default function LearnerPage() {
       case 'records':
         return (
           <ReviewsComponent
-            schedForReview={schedForReview}
             userData={userData}
-            data={{ schedForReview: schedForReview }}
+            data={{ schedForReview: [] }}
           />
         );
       default:
