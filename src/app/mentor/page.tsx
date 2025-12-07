@@ -79,6 +79,10 @@ export default function MentorPage() {
     fetchSchedules,
     createSchedule
   } = useScheduleManager(userName, 'mentor');
+  
+  console.log('MentorPage - userName:', userName);
+  console.log('MentorPage - createSchedule from hook:', typeof createSchedule, createSchedule);
+  
   const [files, setFiles] = useState<any[]>([]);
   const [showAllCourses, setShowAllCourses] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -189,6 +193,7 @@ export default function MentorPage() {
             setUserId={() => {}}
             mentorData={userData}
             userData={userData}
+            createSchedule={createSchedule}
           />
         );
       case 'session':
@@ -225,6 +230,7 @@ export default function MentorPage() {
             setUserId={() => {}}
             mentorData={userData}
             userData={userData}
+            createSchedule={createSchedule}
           />
         );
     }
